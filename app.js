@@ -23,6 +23,7 @@ class Post {
 
          this.addEventListeners();
      }
+    //  AUTHENTICATION
      handleAuth(){
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
@@ -75,6 +76,25 @@ class Post {
 
 
 
-    
+     addPost({username, image}) {
+        const newPost = { id: cuid(), username, image, comments};
+        this.notes = [...this.posts, newPost];
+     }
+    getTimestamp(){
+    const d = new Date();
+    const timestamp = d.getHours();
+    return timestamp;
+    }
+
+     unFollow(id) {
+        this.posts = this.posts.filter((post) => posts.id != id);
+      }
+      displayPost(){
+          this.$posts.innerHTML = this.posts.map((post) => 
+          `
+          
+          
+          `)
+      }
  }
  const app = new App();
