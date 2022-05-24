@@ -3,6 +3,9 @@
     padding:0;
     box-sizing: border-box;
 }
+/* #app {
+    display: none;
+} */
 
 :root {
     --color-border: #dbdbdb;
@@ -78,6 +81,9 @@
     width: 22px;
     border-radius: 50%;
 }
+.cursor {
+    cursor: pointer;
+}
 
 .navbar-icons-inner {
     padding: 0 0 0 24px;
@@ -92,6 +98,7 @@
     margin-left: 14px;
 }
 
+/* MAIN BODY CONTENT */
 main {
     height: calc(100vh - 54px);
     background-color: #fafafa;
@@ -300,7 +307,7 @@ main {
 }
 .title {
     font-size: 14px;
-    fontweight: 600;
+    font-weight: 600;
     color: #8e8e8e;
 }
 .see-all-btn {
