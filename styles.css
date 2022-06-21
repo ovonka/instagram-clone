@@ -3,9 +3,21 @@
     padding:0;
     box-sizing: border-box;
 }
-/* #app {
+#app {
     display: none;
-} */
+    overflow-y: visible;
+}
+
+#upload-container{
+   position: absolute;
+   top: 40%;
+   left: 45%;
+}
+
+.upload-inner-content {
+    display: flex;
+    flex-direction: column;
+}
 
 :root {
     --color-border: #dbdbdb;
