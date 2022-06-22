@@ -1,193 +1,236 @@
 class Post {
-    constructor(id, caption, image) {
-        this.id = id;
-        this.caption = caption;
-        this.image = image;  
-    }
+  constructor(id, caption, image) {
+    this.id = id;
+    this.caption = caption;
+    this.image = image;
+  }
 }
- class App {
-    constructor(){
-         this.posts = [];
-         this.userId = "";
-         this.files = [];
-         this.filename = "";
-         this.imageLink = "";
-                 
-         // DOM USER INTERFACE
-         this.$app = document.querySelector("#app");
-         this.$firebaseAuthContainer = document.querySelector("#firebaseui-auth-container");
-         this.$logoutBtn = document.querySelector(".logout-btn");
-         this.$authUser = document.querySelector(".auth-user");
-         
-         // DOM FUNCTIONALITY
-          this.$uploadContainer = document.querySelector("#upload-container");
-          this.$filesToUpload = document.querySelector("#files");
-          this.$uploadBtn = document.querySelector(".upload-btn");
-          this.$sendBtn = document.querySelector("#send");
-          this.$progress = document.querySelector("#progress");
-          this.$uploadingBar = document.querySelector("#uploading");
-          this.$posts = document.querySelector(".posts");
-          this.$captionText = document.querySelector("#caption-text");
-          this.$postTime = document.querySelector(".posted-time");
+class App {
+  constructor() {
+    this.posts = [];
+    this.userId = "";
+    this.files = [];
+    this.filename = "";
+    this.imageLink = "";
+
+    // DOM USER INTERFACE
+    this.$app = document.querySelector("#app");
+    this.$firebaseAuthContainer = document.querySelector("#firebaseui-auth-container");
+    this.$logoutBtn = document.querySelector(".logout-btn");
+    this.$authUser = document.querySelector(".auth-user");
+
+    // DOM FUNCTIONALITY
+    this.$uploadContainer = document.querySelector("#upload-container");
+    this.$filesToUpload = document.querySelector("#files");
+    this.$uploadBtn = document.querySelector(".upload-btn");
+    this.$sendBtn = document.querySelector("#send");
+    this.$progress = document.querySelector("#progress");
+    this.$uploadingBar = document.querySelector("#uploading");
+    this.$posts = document.querySelector(".posts");
+    this.$captionText = document.querySelector("#caption-text");
+    this.$postTime = document.querySelector(".posted-time");
+    this.$cancelUpload = document.querySelector("#cancel");
 
 
-         
-          // Initialize the FirebaseUI Widget using Firebase.
-         this.ui = new firebaseui.auth.AuthUI(auth);
-         this.handleAuth();
 
-         this.addEventListeners();
+    // Initialize the FirebaseUI Widget using Firebase.
+    this.ui = new firebaseui.auth.AuthUI(auth);
+    this.handleAuth();
 
-         
-     }
+    this.addEventListeners();
 
-    //  AUTHENTICATION
-     handleAuth(){
-       
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-              console.log("user", user)
-             this.redirectToApp()
-             this.$authUser.innerHTML = user.displayName;
-              this.userId = user.uid;
-              // ...
-            } else {
-                this.redirectToAuth();
-             
-            }
-          });
-     }
-     handleLogout(event){
-         const isLogoutBtnClickedOn = this.$logoutBtn.contains(event.target);
-         if(isLogoutBtnClickedOn) {
-             firebase.auth().signOut().then(() => {
-                 // Sign-out successful.
-                 this.redirectToAuth();
-               }).catch((error) => {
-                 // An error happened.
-                 console.log("ERROR HAS OCCURED", error)
-               });
-         }
-     }
-     redirectToApp(){
-        this.$firebaseAuthContainer.style.display = "none";
-        this.$uploadContainer.style.display = "none";
-        this.$app.style.display = "block";
+    this.displayPost();
+  }
 
-     }
-     redirectToAuth(){
-        this.$firebaseAuthContainer.style.display = "block";
-        this.$app.style.display = "none";
-        this.$uploadContainer.style.display = "none";
+  //  AUTHENTICATION
+  handleAuth() {
 
-        this.ui.start('#firebaseui-auth-container', {
-            signInOptions: [
-                firebase.auth.EmailAuthProvider.PROVIDER_ID,
-                firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-            ],
-            // Other config options...
-          });
-     }
-    //  EVENT LISTENERS
-     addEventListeners(){
-         document.body.addEventListener("click", (event) => {
-           this.handleLogout(event)
-           this.redirectToUploadContainer(event);
-           this.handleUploadClick(event);
-         });
-         this.$filesToUpload.addEventListener("change", (event) => {
-            this.handleFileChosen(event);
-            }); 
-           
-           
-     }
-     redirectToUploadContainer(event){
-       const isUploadBtnClickedOn = this.$uploadBtn.contains(event.target);
-       if(isUploadBtnClickedOn) {
-        this.$app.style.display = "none";
-         this.$uploadContainer.style.display = "block";
-       }   
-     }
-    // UPLOAD TO FIREBASE
-     handleFileChosen(event){
-       this.files = event.target.files;     
-       if(this.files.length > 0){
-
-         alert("File chosen!");
-       }
-       else {
-        alert("No file chosen!");
-         }
-     } 
-    //  UPLOAD
-     handleUploadClick(event){
-       const isUploadBtnClickedOn = this.$sendBtn.contains(event.target);
-       if(isUploadBtnClickedOn) {
-         this.uploadToFB();      
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.$authUser.innerHTML = user.displayName;
+        this.userId = user.uid;
+        this.redirectToApp()
+        // ...
+      } else {
+        this.redirectToAuth();
       }
-      }
-      uploadToFB(){
-        for(let i = 0; i < this.files.length; i++){
-          const name = this.files[i].name 
-          const upload = storage.ref(name).put(this.files[i]);
-          upload
-          .then((snapshot)  => { 
-            console.log("File uploaded");
-              this.progressBar(snapshot);
-              this.getFileUrl(name);            
-            }).catch((error) =>{
-              console.log(error,"error uploading file")
-            });      
-          }
-      }
-      fileChosen(url){
-        const image = url;
-        const caption = this.$captionText.value;
-                this.postImage({image, caption});
-                this.$filesToUpload.value = "";
-                this.$progress.value = "";
-                this.$uploadingBar.innerHTML = "";
-                this.$captionText.value = "";
-                this.redirectToApp(); 
-        
-      }
-      // PROGRESS BAR
-  progressBar(snapshot){
+    });
+  }
+  handleLogout(event) {
+    const isLogoutBtnClickedOn = this.$logoutBtn.contains(event.target);
+    if (isLogoutBtnClickedOn) {
+      firebase.auth().signOut().then(() => {
+        // Sign-out successful.
+        this.redirectToAuth();
+      }).catch((error) => {
+        // An error happened.
+        console.log("ERROR HAS OCCURED", error)
+      });
+    }
+  }
+  redirectToApp() {
+    this.$firebaseAuthContainer.style.display = "none";
+    this.$uploadContainer.style.display = "none";
+    this.$app.style.display = "block";
+    this.fetchPostsFromDB();
+
+  }
+  redirectToAuth() {
+    this.$firebaseAuthContainer.style.display = "block";
+    this.$app.style.display = "none";
+    this.$uploadContainer.style.display = "none";
+
+    this.ui.start('#firebaseui-auth-container', {
+      signInOptions: [
+        firebase.auth.EmailAuthProvider.PROVIDER_ID,
+        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      ],
+      // Other config options...
+    });
+  }
+  //  EVENT LISTENERS
+  addEventListeners() {
+    document.body.addEventListener("click", (event) => {
+      this.handleLogout(event)
+      this.redirectToUploadContainer(event);
+      this.handleUploadClick(event);
+      this.cancelUpload(event)
+    });
+    this.$filesToUpload.addEventListener("change", (event) => {
+      this.handleFileChosen(event);
+    });
+
+
+  }
+  redirectToUploadContainer(event) {
+    const isUploadBtnClickedOn = this.$uploadBtn.contains(event.target);
+    if (isUploadBtnClickedOn) {
+      this.$app.style.display = "none";
+      this.$uploadContainer.style.display = "block";
+    }
+  }
+  // UPLOAD TO FIREBASE
+  handleFileChosen(event) {
+    this.files = event.target.files;
+    if (this.files.length > 0) {
+
+      alert("File chosen!");
+    }
+    else {
+      alert("No file chosen!");
+    }
+  }
+  //  UPLOAD
+  handleUploadClick(event) {
+    const isUploadBtnClickedOn = this.$sendBtn.contains(event.target);
+    if (isUploadBtnClickedOn) {
+      this.uploadToFB();
+    }
+  }
+  uploadToFB() {
+    for (let i = 0; i < this.files.length; i++) {
+      const name = this.files[i].name
+      const upload = storage.ref(name).put(this.files[i]);
+      upload
+        .then((snapshot) => {
+          console.log("File uploaded");
+          this.progressBar(snapshot);
+          this.getFileUrl(name);
+        }).catch((error) => {
+          console.log(error, "error uploading file")
+        });
+    }
+  }
+  fileChosen(url) {
+    const image = url;
+    const caption = this.$captionText.value;
+    this.postImage({ image, caption });
+    this.$filesToUpload.value = "";
+    this.$progress.value = "";
+    this.$uploadingBar.innerHTML = "";
+    this.$captionText.value = "";
+    this.redirectToApp();
+
+  }
+  // PROGRESS BAR
+  progressBar(snapshot) {
     const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
     this.$progress.value = percentage
-    if(percentage){
+    if (percentage) {
       this.$uploadingBar.innerHTML = `${this.files[0].name} uploaded`;
-      } 
-    }   
-      // GET URL
-      getFileUrl(name) { 
-        const imageRef = storage.ref(name);
-        imageRef
-        .getDownloadURL()
-        .then((url) =>{
-          console.log("image URL =",url);
-           this.fileChosen(url);  
-        })
-        .catch((error) => {
-          console.log(error,"error encountered");
-        });
-        }
-           
+    }
+  }
+  // GET URL
+  getFileUrl(name) {
+    const imageRef = storage.ref(name);
+    imageRef
+      .getDownloadURL()
+      .then((url) => {
+        console.log("image URL =", url);
+        this.fileChosen(url);
+      })
+      .catch((error) => {
+        console.log(error, "error encountered");
+      });
+  }
 
-     postImage({image, caption}) {
-        const newPost = { id: cuid(), image, caption, timestamp: this.getTimestamp()};
-        this.posts = [...this.posts, newPost];
-        this.savePosts();
-        this.displayPost(); 
-     }
-    getTimestamp(){
+  cancelUpload(event) {
+    const isCancelBtnClickedOn = this.$cancelUpload.contains(event.target);
+    if (isCancelBtnClickedOn) {
+      this.$filesToUpload.value = "";
+      this.$progress.value = "";
+      this.$uploadingBar.innerHTML = "";
+      this.$captionText.value = "";
+      this.redirectToApp();
+    }
+  }
+
+
+  postImage({ image, caption }) {
+    const newPost = { id: cuid(), image, caption, timestamp: this.getTimestamp() };
+    this.posts = [...this.posts, newPost];
+    this.render();
+  }
+  getTimestamp() {
     const d = new Date();
     const timestamp = d.getHours() + ':' + d.getUTCMinutes();
     return timestamp;
-    }
+  }
+  fetchPostsFromDB() {
 
-       savePosts(){
-       db.collection("users")
+    var docRef = db.collection("users").doc(this.userId);
+
+    docRef
+      .get()
+      .then((doc) => {
+        if (doc.exists) {
+          console.log("Document data:", doc.data().posts);
+          this.posts = doc.data().posts
+          this.displayPost();
+        } else {
+          // doc.data() will be undefined in this case
+          console.log("No such document!");
+          db.collection("users")
+            .doc(this.userId)
+            .set({
+              posts: []
+            })
+            .then(() => {
+              console.log("Document successfully written!");
+            })
+            .catch((error) => {
+              console.error("Error writing document: ", error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.log("Error getting document:", error);
+      });
+
+  }
+
+  savePosts() {
+    db.collection("users")
       .doc(this.userId)
       .set({
         posts: this.posts
@@ -198,16 +241,16 @@ class Post {
       .catch((error) => {
         console.error("Error writing document: ", error);
       });
-        }
-       
+  }
 
-      // render(){
-      //   this.savePosts();
-      //   this.displayPost();
-      // }
-      displayPost(){
-          this.$posts.innerHTML = this.posts.map((post) => 
-          `<div class="post" id="${post.id}">
+
+  render() {
+    this.savePosts();
+    this.displayPost();
+  }
+  displayPost() {
+    this.$posts.innerHTML = this.posts.map((post) =>
+      `<div class="post" id="${post.id}">
           <div class="header">
             <div class="profile-area">
               <div class="post-pic">
@@ -346,12 +389,10 @@ class Post {
               >
             </span>
             <span class="comment">
-              <span class="caption-username"><b>akhilboddu</b></span>
-              <span class="caption-text">Thank you</span>
+            
             </span>
             <span class="comment">
-              <span class="caption-username"><b>imharjot</b></span>
-              <span class="caption-text"> Great stuff</span>
+         
             </span>
             <span class="posted-time">${post.timestamp}</span>
           </div>
@@ -363,6 +404,6 @@ class Post {
           
           
           `).join("");
-      }
- }
- const app = new App();
+  }
+}
+const app = new App();

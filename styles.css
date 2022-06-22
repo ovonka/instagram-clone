@@ -244,6 +244,9 @@ main {
     justify-content: space-between;
     align-items: center;
 }
+.comment{
+    display: none;
+}
 
 .like-comment-share {
     display: flex;
