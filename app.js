@@ -27,7 +27,8 @@ class Post {
           this.$progress = document.querySelector("#progress");
           this.$uploadingBar = document.querySelector("#uploading");
           this.$posts = document.querySelector(".posts");
-          this.$imageSrc = document.querySelector(".FFVAD").src;
+          this.$captionText = document.querySelector("#caption-text");
+          this.$postTime = document.querySelector(".posted-time");
 
 
          
@@ -118,6 +119,7 @@ class Post {
         alert("No file chosen!");
          }
      } 
+    //  UPLOAD
      handleUploadClick(event){
        const isUploadBtnClickedOn = this.$sendBtn.contains(event.target);
        if(isUploadBtnClickedOn) {
@@ -140,11 +142,14 @@ class Post {
       }
       fileChosen(url){
         const image = url;
-              this.postImage({image});
-              this.$filesToUpload.value = "";
-              this.$progress.value = "";
-              this.$uploadingBar.innerHTML = "";
-              this.redirectToApp(); 
+        const caption = this.$captionText.value;
+                this.postImage({image, caption});
+                this.$filesToUpload.value = "";
+                this.$progress.value = "";
+                this.$uploadingBar.innerHTML = "";
+                this.$captionText.value = "";
+                this.redirectToApp(); 
+        
       }
       // PROGRESS BAR
   progressBar(snapshot){
@@ -169,15 +174,15 @@ class Post {
         }
            
 
-     postImage({image}) {
-        const newPost = { id: cuid(), image};
+     postImage({image, caption}) {
+        const newPost = { id: cuid(), image, caption, timestamp: this.getTimestamp()};
         this.posts = [...this.posts, newPost];
         this.savePosts();
-        this.displayPost();
+        this.displayPost(); 
      }
     getTimestamp(){
     const d = new Date();
-    const timestamp = d.getHours() + ':' + d.getMinutes();
+    const timestamp = d.getHours() + ':' + d.getUTCMinutes();
     return timestamp;
     }
 
@@ -194,14 +199,7 @@ class Post {
         console.error("Error writing document: ", error);
       });
         }
-        // displayPost(){
-        //   this.$posts.innerHTML = this.posts.map((post) =>
-        //   console.log(`
-        //   ID: ${post.id}
-        //   IMAGE: ${post.image}
-        //   CAPTION: ${post.caption}  
-        //   `))
-        // }
+       
 
       // render(){
       //   this.savePosts();
@@ -344,8 +342,7 @@ class Post {
             <span class="caption">
               <span class="caption-username"><b>jayshetty</b></span>
               <span class="caption-text">
-                ORDER NOW: www.thinklikeamonkbook.com (LINK IN BIO)...
-                more</span
+                ${post.caption}</span
               >
             </span>
             <span class="comment">
@@ -356,7 +353,7 @@ class Post {
               <span class="caption-username"><b>imharjot</b></span>
               <span class="caption-text"> Great stuff</span>
             </span>
-            <span class="posted-time">5 HOURS AGO</span>
+            <span class="posted-time">${post.timestamp}</span>
           </div>
           <div class="add-comment">
             <input type="text" placeholder="Add a comment..." />
@@ -365,7 +362,7 @@ class Post {
         </div>
           
           
-          `);
+          `).join("");
       }
  }
  const app = new App();

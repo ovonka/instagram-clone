@@ -191,6 +191,10 @@ main {
     font-size: 12px;
     font-weight: 400;
 }
+.posts{
+    display: flex;
+    flex-direction: column-reverse;
+}
 
 .post {
     display: flex;
@@ -258,7 +262,7 @@ main {
 }
 
 .posted-time {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     color: #989898;
     margin-top: 5px;
