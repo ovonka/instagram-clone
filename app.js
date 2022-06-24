@@ -8,6 +8,8 @@ class Post {
 class App {
   constructor() {
     this.posts = [];
+    this.loginUsername = "";
+    this.postUsername = "";
     this.userId = "";
     this.files = [];
     this.filename = "";
@@ -27,6 +29,8 @@ class App {
     this.$progress = document.querySelector("#progress");
     this.$uploadingBar = document.querySelector("#uploading");
     this.$posts = document.querySelector(".posts");
+    this.$username = document.querySelector(".profile-name");
+    this.$capUsername = document.querySelector("#cap-username");
     this.$captionText = document.querySelector("#caption-text");
     this.$postTime = document.querySelector(".posted-time");
     this.$cancelUpload = document.querySelector("#cancel");
@@ -47,6 +51,7 @@ class App {
 
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        this.loginUsername = user.displayName;
         this.$authUser.innerHTML = user.displayName;
         this.userId = user.uid;
         this.redirectToApp()
@@ -184,10 +189,10 @@ class App {
       this.redirectToApp();
     }
   }
-
-
   postImage({ image, caption }) {
-    const newPost = { id: cuid(), image, caption, timestamp: this.getTimestamp() };
+    const lowerCaseUsername = this.loginUsername.toLocaleLowerCase();
+    const username = lowerCaseUsername.replace(/\s/g, "");
+    const newPost = { id: cuid(), image, caption, username, timestamp: this.getTimestamp() };
     this.posts = [...this.posts, newPost];
     this.render();
   }
@@ -262,7 +267,7 @@ class App {
                   src="assets/akhil.png"
                 />
               </div>
-              <span class="profile-name">jayshetty</span>
+              <span class="profile-name">${post.username}</span>
             </div>
             <div class="options">
               <div
@@ -383,16 +388,18 @@ class App {
               >Liked by <b>ishitaaaa.b</b> and <b>others</b></span
             >
             <span class="caption">
-              <span class="caption-username"><b>jayshetty</b></span>
+              <span id="cap-username" class="caption-username"><b>${post.username}</b></span>
               <span class="caption-text">
                 ${post.caption}</span
               >
             </span>
             <span class="comment">
-            
+              <span class="caption-username"><b>akhilboddu</b></span>
+              <span class="caption-text">Thank you</span>
             </span>
             <span class="comment">
-         
+              <span class="caption-username"><b>imharjot</b></span>
+              <span class="caption-text"> Great stuff</span>
             </span>
             <span class="posted-time">${post.timestamp}</span>
           </div>
