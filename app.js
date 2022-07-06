@@ -1,19 +1,23 @@
 class Post {
-  constructor(id, caption, image) {
+  constructor(id, caption, image, imageName) {
     this.id = id;
     this.caption = caption;
     this.image = image;
+    this.imageName = imageName;
   }
 }
 class App {
   constructor() {
     this.posts = [];
     this.loginUsername = "";
-    this.postUsername = "";
     this.userId = "";
     this.files = [];
-    this.filename = "";
-    this.imageLink = "";
+    this.selectedOptionsId = "";
+    this.selectedOptionsCaption = "";
+    this.selectedOptionsImage = "";
+    this.indexOfPost = "";
+    this.url = "";
+
 
     // DOM USER INTERFACE
     this.$app = document.querySelector("#app");
@@ -25,15 +29,23 @@ class App {
     this.$uploadContainer = document.querySelector("#upload-container");
     this.$filesToUpload = document.querySelector("#files");
     this.$uploadBtn = document.querySelector(".upload-btn");
+    this.$cancelUpload = document.querySelector("#cancel");
     this.$sendBtn = document.querySelector("#send");
     this.$progress = document.querySelector("#progress");
     this.$uploadingBar = document.querySelector("#uploading");
     this.$posts = document.querySelector(".posts");
-    this.$username = document.querySelector(".profile-name");
-    this.$capUsername = document.querySelector("#cap-username");
     this.$captionText = document.querySelector("#caption-text");
     this.$postTime = document.querySelector(".posted-time");
-    this.$cancelUpload = document.querySelector("#cancel");
+    this.$authModal = document.querySelector(".authenticated");
+    this.$modalContent = document.querySelector("#auth-content");
+    this.$editBtn = document.querySelector("#edit-btn");
+    this.$fileName = document.querySelector(".file-name");
+    this.$updateBtn = document.querySelector("#update-post");
+    this.$defaultModal = document.querySelector(".default-modal");
+    this.$imgSrc = document.querySelector("#set-img");
+    this.$unFollow = document.querySelector("#delete-post");
+
+
 
 
 
@@ -96,15 +108,18 @@ class App {
   //  EVENT LISTENERS
   addEventListeners() {
     document.body.addEventListener("click", (event) => {
-      this.handleLogout(event)
+      this.handleLogout(event);
       this.redirectToUploadContainer(event);
       this.handleUploadClick(event);
-      this.cancelUpload(event)
+      this.cancelUpload(event);
+      this.closeModal(event);
+      this.openModal(event);
+      this.handleDeletePost(event);
+      this.handleUpdate(event);
     });
     this.$filesToUpload.addEventListener("change", (event) => {
       this.handleFileChosen(event);
     });
-
 
   }
   redirectToUploadContainer(event) {
@@ -112,26 +127,28 @@ class App {
     if (isUploadBtnClickedOn) {
       this.$app.style.display = "none";
       this.$uploadContainer.style.display = "block";
+      this.$sendBtn.style.display = "block";
+      this.$updateBtn.style.display = "none";
     }
   }
   // UPLOAD TO FIREBASE
   handleFileChosen(event) {
     this.files = event.target.files;
     if (this.files.length > 0) {
-
       alert("File chosen!");
     }
     else {
       alert("No file chosen!");
     }
   }
-  //  UPLOAD
+  //  UPLOAD TO TIMELINE
   handleUploadClick(event) {
     const isUploadBtnClickedOn = this.$sendBtn.contains(event.target);
     if (isUploadBtnClickedOn) {
       this.uploadToFB();
     }
   }
+  // UPLOAD TO FIREBASE STORAGE
   uploadToFB() {
     for (let i = 0; i < this.files.length; i++) {
       const name = this.files[i].name
@@ -146,16 +163,16 @@ class App {
         });
     }
   }
+  // POST TO FEED
   fileChosen(url) {
-    const image = url;
     const caption = this.$captionText.value;
+    const image = url;
     this.postImage({ image, caption });
     this.$filesToUpload.value = "";
     this.$progress.value = "";
     this.$uploadingBar.innerHTML = "";
     this.$captionText.value = "";
     this.redirectToApp();
-
   }
   // PROGRESS BAR
   progressBar(snapshot) {
@@ -189,6 +206,84 @@ class App {
       this.redirectToApp();
     }
   }
+  openModal(event) {
+    const $selectedPost = event.target.closest(".post");
+    const $selectedOptions = event.target.closest(".options");
+    if ($selectedOptions) {
+      this.selectedOptionsId = $selectedOptions.id;
+      this.selectedOptionsCaption = $selectedPost.children[2].childNodes[3].childNodes[2].nextSibling.innerText;
+      // this.selectedOptionsImage = $selectedPost.children[1].childNodes[1].currentSrc;
+      this.$authModal.classList.add("open-modal");
+    }
+  }
+  closeModal(event) {
+    const isAuthContentClickedOn = this.$modalContent.contains(event.target);
+    if (!isAuthContentClickedOn && this.$authModal.classList.contains("open-modal")) {
+      this.$authModal.classList.remove("open-modal");
+    }
+  }
+  handleDeletePost(event) {
+    const isDeleteBtnClickedOn = this.$unFollow.contains(event.target);
+    if (isDeleteBtnClickedOn) {
+      this.deletePost(this.selectedOptionsId);
+      this.$authModal.classList.remove("open-modal");
+    }
+
+  }
+  updatePost(fileLink) {
+    this.editPost(this.selectedOptionsId, { image: fileLink, caption: this.$captionText.value });
+    this.$progress.value = "";
+    this.$uploadingBar.innerHTML = "";
+    this.$captionText.value = "";
+    this.redirectToApp();
+  }
+  handleUpdate(event) {
+    const isEditBtnClickedOn = this.$editBtn.contains(event.target);
+    const isUpdateBtnClickedOn = this.$updateBtn.contains(event.target);
+    const isInputFileClickedOn = this.$filesToUpload.contains(event.target);
+    if (isEditBtnClickedOn) {
+      this.$app.style.display = "none";
+      this.$uploadContainer.style.display = "block";
+      this.$updateBtn.style.display = "block";
+      this.$sendBtn.style.display = "none";
+      this.$captionText.value = this.selectedOptionsCaption;
+    }
+    else if (isUpdateBtnClickedOn) {
+      this.fetchImageFromDB();
+    }
+    else if (isInputFileClickedOn) {
+      this.$sendBtn.style.display = "block";
+      this.$updateBtn.style.display = "none";
+      this.uploadToFB();
+      this.deletePost(this.selectedOptionsId);
+    }
+  }
+
+  getIndex() {
+    const index = this.posts.map(post => post.id).indexOf(this.selectedOptionsId);
+    this.indexOfPost = index;
+  }
+
+
+  fetchImageFromDB() {
+    var docRef = db.collection("users").doc(this.userId);
+
+    docRef.get().then((doc) => {
+      if (doc.exists) {
+        this.getIndex();
+        console.log("Document data:", doc.data().posts[this.indexOfPost].image);
+        const fileLink = doc.data().posts[this.indexOfPost].image;
+        this.updatePost(fileLink);
+      } else {
+        // doc.data() will be undefined in this case
+        console.log("No such document!");
+      }
+    }).catch((error) => {
+      console.log("Error getting document:", error);
+    });
+
+  }
+
   postImage({ image, caption }) {
     const lowerCaseUsername = this.loginUsername.toLocaleLowerCase();
     const username = lowerCaseUsername.replace(/\s/g, "");
@@ -201,8 +296,21 @@ class App {
     const timestamp = d.getHours() + ':' + d.getUTCMinutes();
     return timestamp;
   }
+  editPost(id, { image, caption }) {
+    this.posts = this.posts.map((post) => {
+      if (post.id == id) {
+        post.image = image;
+        post.caption = caption;
+      }
+      return post;
+    });
+    this.render();
+  }
+  deletePost(id) {
+    this.posts = this.posts.filter((post) => post.id != id);
+    this.render();
+  }
   fetchPostsFromDB() {
-
     var docRef = db.collection("users").doc(this.userId);
 
     docRef
@@ -218,7 +326,7 @@ class App {
           db.collection("users")
             .doc(this.userId)
             .set({
-              posts: []
+              posts: this.posts
             })
             .then(() => {
               console.log("Document successfully written!");
@@ -269,17 +377,18 @@ class App {
               </div>
               <span class="profile-name">${post.username}</span>
             </div>
-            <div class="options">
-              <div
-                class="Igw0E rBNOH YBx95 _4EzTm"
-                style="height: 24px; width: 24px"
-              >
+            <div class="options" id="${post.id}">
+            <button type="button" class="more-btn"> 
+            <div
+            class="Igw0E rBNOH YBx95 _4EzTm"
+            style="height: 24px; width: 24px"
+            >
                 <svg
                   aria-label="More options"
                   class="_8-yf5"
                   fill="#262626"
                   height="16"
-                  viewBox="0 0 48 48"
+                  viewBox="0 0 48 48" 
                   width="16"
                 >
                   <circle
@@ -304,8 +413,9 @@ class App {
                     r="4.5"
                   ></circle>
                 </svg>
-              </div>
-            </div>
+                </div>
+                </button>
+                </div>
           </div>
           <div class="body">
             <img
@@ -384,12 +494,10 @@ class App {
                 </div>
               </div>
             </div>
-            <span class="likes"
-              >Liked by <b>ishitaaaa.b</b> and <b>others</b></span
-            >
+          
             <span class="caption">
               <span id="cap-username" class="caption-username"><b>${post.username}</b></span>
-              <span class="caption-text">
+              <span class="caption-text" id="caption-text">
                 ${post.caption}</span
               >
             </span>
@@ -413,4 +521,5 @@ class App {
           `).join("");
   }
 }
+
 const app = new App();
