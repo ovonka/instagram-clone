@@ -1,9 +1,8 @@
 class Post {
-  constructor(id, caption, image, imageName) {
+  constructor(id, caption, image) {
     this.id = id;
     this.caption = caption;
     this.image = image;
-    this.imageName = imageName;
   }
 }
 class App {
