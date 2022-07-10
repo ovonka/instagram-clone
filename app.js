@@ -16,7 +16,6 @@ class App {
     this.selectedOptionsCaption = "";
     this.selectedOptionsImage = "";
     this.indexOfPost = "";
-    this.url = "";
 
 
     // DOM USER INTERFACE
@@ -42,12 +41,8 @@ class App {
     this.$fileName = document.querySelector(".file-name");
     this.$updateBtn = document.querySelector("#update-post");
     this.$defaultModal = document.querySelector(".default-modal");
-    this.$imgSrc = document.querySelector("#set-img");
+    this.$defaultContent = document.querySelector(".default");
     this.$unFollow = document.querySelector("#delete-post");
-
-
-
-
 
     // Initialize the FirebaseUI Widget using Firebase.
     this.ui = new firebaseui.auth.AuthUI(auth);
@@ -112,8 +107,9 @@ class App {
       this.redirectToUploadContainer(event);
       this.handleUploadClick(event);
       this.cancelUpload(event);
+      this.closeDefaultModal(event)
       this.closeModal(event);
-      this.openModal(event);
+      this.openModalOnOptions(event);
       this.handleDeletePost(event);
       this.handleUpdate(event);
     });
@@ -206,14 +202,36 @@ class App {
       this.redirectToApp();
     }
   }
-  openModal(event) {
-    const $selectedPost = event.target.closest(".post");
+  // MODAL FUNCTIONALITY
+  openModalOnOptions(event) {
     const $selectedOptions = event.target.closest(".options");
     if ($selectedOptions) {
       this.selectedOptionsId = $selectedOptions.id;
-      this.selectedOptionsCaption = $selectedPost.children[2].childNodes[3].childNodes[2].nextSibling.innerText;
-      // this.selectedOptionsImage = $selectedPost.children[1].childNodes[1].currentSrc;
-      this.$authModal.classList.add("open-modal");
+      this.handleModalPop(event);
+    }
+  }
+
+  handleModalPop(event) {
+    const $selectedPost = event.target.closest(".post");
+    this.selectedOptionsCaption = $selectedPost.children[2].childNodes[3].childNodes[2].nextSibling.innerText;
+    const $postUsername = $selectedPost.children[0].innerText;
+    if ($postUsername.length === this.loginUsername.length - 1) {
+      this.openModal();
+    } else {
+      this.openDefaultModal();
+    }
+  }
+  openDefaultModal() {
+    this.$defaultModal.classList.add("open-modal");
+  }
+
+  openModal() {
+    this.$authModal.classList.add("open-modal");
+  }
+  closeDefaultModal(event) {
+    const isdefaultContentModalClickedOn = this.$defaultContent.contains(event.target);
+    if (!isdefaultContentModalClickedOn && this.$defaultModal.classList.contains("open-modal")) {
+      this.$defaultModal.classList.remove("open-modal");
     }
   }
   closeModal(event) {
@@ -222,6 +240,7 @@ class App {
       this.$authModal.classList.remove("open-modal");
     }
   }
+  // DELETE POST
   handleDeletePost(event) {
     const isDeleteBtnClickedOn = this.$unFollow.contains(event.target);
     if (isDeleteBtnClickedOn) {
@@ -230,12 +249,28 @@ class App {
     }
 
   }
-  updatePost(fileLink) {
-    this.editPost(this.selectedOptionsId, { image: fileLink, caption: this.$captionText.value });
-    this.$progress.value = "";
-    this.$uploadingBar.innerHTML = "";
-    this.$captionText.value = "";
-    this.redirectToApp();
+  // EDIT OF POST
+  fetchImageFromDB() {
+    var docRef = db.collection("users").doc(this.userId);
+
+    docRef.get().then((doc) => {
+      if (doc.exists) {
+        this.getIndex();
+        console.log("Document data:", doc.data().posts[this.indexOfPost].image);
+        const fileLink = doc.data().posts[this.indexOfPost].image;
+        this.updatePost(fileLink);
+      } else {
+        // doc.data() will be undefined in this case
+        console.log("No such document!");
+      }
+    }).catch((error) => {
+      console.log("Error getting document:", error);
+    });
+  }
+  //  INDEX OF POST
+  getIndex() {
+    const index = this.posts.map(post => post.id).indexOf(this.selectedOptionsId);
+    this.indexOfPost = index;
   }
   handleUpdate(event) {
     const isEditBtnClickedOn = this.$editBtn.contains(event.target);
@@ -258,30 +293,12 @@ class App {
       this.deletePost(this.selectedOptionsId);
     }
   }
-
-  getIndex() {
-    const index = this.posts.map(post => post.id).indexOf(this.selectedOptionsId);
-    this.indexOfPost = index;
-  }
-
-
-  fetchImageFromDB() {
-    var docRef = db.collection("users").doc(this.userId);
-
-    docRef.get().then((doc) => {
-      if (doc.exists) {
-        this.getIndex();
-        console.log("Document data:", doc.data().posts[this.indexOfPost].image);
-        const fileLink = doc.data().posts[this.indexOfPost].image;
-        this.updatePost(fileLink);
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-      }
-    }).catch((error) => {
-      console.log("Error getting document:", error);
-    });
-
+  updatePost(fileLink) {
+    this.editPost(this.selectedOptionsId, { image: fileLink, caption: this.$captionText.value });
+    this.$progress.value = "";
+    this.$uploadingBar.innerHTML = "";
+    this.$captionText.value = "";
+    this.redirectToApp();
   }
 
   postImage({ image, caption }) {
@@ -355,8 +372,6 @@ class App {
         console.error("Error writing document: ", error);
       });
   }
-
-
   render() {
     this.savePosts();
     this.displayPost();
