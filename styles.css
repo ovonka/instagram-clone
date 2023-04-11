@@ -8,7 +8,7 @@
     overflow-y: visible; 
     z-index: -1; 
 }
-
+/* UPLOAD PAGE */
 #upload-container{
    position: absolute;
    top: 40%;
